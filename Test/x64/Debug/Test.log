@@ -1,0 +1,4 @@
+﻿  Main.cpp
+e:\vsprojects\test\test\main.cpp(46): warning C4101: 'status': unreferenced local variable
+  Test.vcxproj -> E:\VSProjects\Test\x64\Debug\Test.exe
+  Test.vcxproj -> E:\VSProjects\Test\x64\Debug\Test.pdb (Full PDB)
