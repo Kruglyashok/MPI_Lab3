@@ -1,13 +1,12 @@
 ﻿  Main.cpp
 e:\vsprojects\test\test\Matrix.h(9): warning C4244: 'argument': conversion from 'time_t' to 'unsigned int', possible loss of data
-Main.cpp(35): warning C4804: '<': unsafe use of type 'bool' in operation
-Main.cpp(150): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
-Main.cpp(188): warning C4101: 'result': unreferenced local variable
+Main.cpp(28): warning C4804: '<': unsafe use of type 'bool' in operation
+Main.cpp(152): warning C4244: 'argument': conversion from 'double' to 'int', possible loss of data
+Main.cpp(190): warning C4101: 'result': unreferenced local variable
   Generating code
-e:\vsprojects\test\test\main.cpp(286): warning C4700: uninitialized local variable 'DataSize' used
-  6 of 295 functions ( 2.0%) were compiled, the rest were copied from previous compilation.
+  1 of 178 functions ( 0.6%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+    13 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   Test.vcxproj -> E:\VSProjects\Test\x64\Release\Test.exe
   Test.vcxproj -> E:\VSProjects\Test\x64\Release\Test.pdb (Full PDB)

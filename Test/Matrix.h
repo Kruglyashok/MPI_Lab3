@@ -26,6 +26,16 @@ void PrintMatrix(double* &matrix, int rows, int cols)
 		cout << endl;
 	}
 }
+void PrintMatrix(double **matrix, double *b, int rows, int cols) {
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j < cols; j++) {
+			cout << "\t" << matrix[i][j];
+			if (i == cols - 1) cout << "\t" << b[i];
+		}
+		cout << endl;
+	}
+}
+
 void PrintMatrixRank(double* &matrix, int rows, int cols, int rank)
 {
 	for (int i = 0; i < rows; i++)

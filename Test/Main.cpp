@@ -13,20 +13,13 @@
 /*[INPUT FILE GUIDE]
 0 row - degree of approximating polynom
 1 st row - lower nd upper bound
-2 nd - number of dots
 the rest - dots
 */
 
 using namespace std;
 
 const string filename = "Input.txt";
-//function for printing the elements in a list
-void showlist(list <pair <double, double> > _list) {
-	list < pair <double, double> > ::iterator it;
-	for (it = _list.begin(); it != _list.end(); ++it)
-		cout << '\t' << "x : " << (*it).first << " y : " << (*it).second << endl;
-	cout << endl;
-}
+
 // get lower and upper bounds
 void getNums(double &lbound, double &ubound, string tmp) {
 	string tmp1 = "";
@@ -47,12 +40,22 @@ void getNums(double &lbound, double &ubound, string tmp) {
 
 	}
 }
-//read input file
-void readInput(list< pair<double, double> > &dots, int &dotNums, double &lbound, double &ubound, int &deg) {
-
+int dotNum() {
 	ifstream fin(filename, ios_base::in);
 	string tmp;
-	double a, b;
+	int res = 0;
+	getline(fin, tmp);
+	getline(fin, tmp);
+	while (getline(fin, tmp)) res++;
+	fin.close();
+	return res;
+}
+
+//read input file
+void readInput(double *x, double *y, int dotNums, double &lbound, double &ubound, int &deg) {
+	ifstream fin(filename, ios_base::in);
+	string tmp;
+
 	if (fin.is_open()) {
 		cout << "success" << endl;
 		getline(fin, tmp);
@@ -60,12 +63,11 @@ void readInput(list< pair<double, double> > &dots, int &dotNums, double &lbound,
 		getline(fin, tmp);
 		getNums(lbound, ubound, tmp);
 		getline(fin, tmp);
-		dotNums = 0;
+		int i = 0;
 		while (!fin.eof()) {
-			fin >> a;
-			fin >> b;
-			dots.push_back(make_pair(a, b));
-			dotNums++;
+			fin >> x[i];
+			fin >> y[i];
+			i++;
 		}
 		fin.close();
 	}
@@ -101,7 +103,7 @@ void ChooseMain(double* &matrix, int Rows_Start, int Cols, int Rows, int Column_
 
 //Collective function: require to call for each process together
 //double* &matrix size may vary in each process
-//int RankSize needs only because MPI_Bcast won't work properly
+//int size needs only because MPI_Bcast won't work properly
 void GaussForwardMPI(double* &matrix, int Rows, int Cols, int rank, int Seq, int size)
 {
 	double main_value;
@@ -182,7 +184,7 @@ void GaussForwardMPI(double* &matrix, int Rows, int Cols, int rank, int Seq, int
 }
 //Collective function: require to call for each process together
 //double* &matrix size may vary in each process
-//int RankSize needs only because MPI_Bcast won't work properly
+//int size needs only because MPI_Bcast won't work properly
 double Determinant(double* &matrix, int Rows, int Cols, int RowStart)
 {
 	double result;
@@ -253,61 +255,96 @@ int DataDistr(int* &Displ, int* &sendcounts, int Rows, int Cols, int DataSize, i
 	return root_datasize;
 }
 
+void fillMainMatrix(double **matrix, int dotNums, int deg, double *x, double *y, double *b) {
+	//init sums matrix
+	for (int i = 0; i < deg + 1; i++) {
+		for (int j = 0; j < deg + 1; j++) {
+			matrix[i][j] = 0;
+			for (int k = 0; k < dotNums; k++) {
+				matrix[i][j] += pow(x[k], i + j);
+			}
+		}
+	}
+	//init free coefficients column
+	for (int i = 0; i < deg + 1; i++) {
+		for (int k = 0; k < dotNums; k++) {
+			b[i] += pow(x[k], i) * y[k];
+		}
+	}
+}
+
 void main(int argc, char** argv)
 {
 	//[ Matrix initialization ]
-	double* matrix;	// a main matrix, init in rank 0;
-	int Rows = atoi(argv[1]);	// # rows in the matrix
-	int Cols = Rows + 1;// # cols in the matrix
+	//double* matrix;	// a main matrix, init in rank 0;
+	//int Rows = atoi(argv[1]);	// # rows in the matrix
+	//int Cols = Rows + 1;// # cols in the matrix
 	int rank, size;
 
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 	MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-	int DataSize;	// # rows process has
-	int* DataSizeArray; //root: # elems to send each process
-	int* Displ;
-	double *RecvBuf;
-	double* matrixMPI;
-	double* xMPI;
+	//int DataSize;	// # rows process has
+	//int* DataSizeArray; //root: # elems to send each process
+	//int* Displ;
+	//double *RecvBuf;
+	//double* matrixMPI;
+	//double* xMPI;
+	//if (rank == 0)
+	//{
+	//	//[[ Matrix initialization ]]
+	//	cout << "[[ Generating matrix ]]" << endl;
+	//	cout << "[ Rows: " << Rows << " Cols: " << Cols << " ]" << endl;
+	//	GenerateMatrix(matrix, Rows, Cols, 1, Rows * 10);
+	//	matrixMPI = new double[Cols*Rows];
+	//	CopyInto(matrix, matrixMPI, Rows, Cols);
+
+	//	//[[ MPI ]]
+	//	cout << "[[ MPI ]]" << endl;
+	//	PrintMatrix(matrix, Rows, Cols);
+	//	DataSize = DataDistr(Displ, DataSizeArray, Rows, Cols, DataSize, size);
+	//}
+	//else
+	//{
+	//	MPI_Recv(&DataSize, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	//}
+
+	//// [[ Shared code ]]
+	//MPI_Barrier(MPI_COMM_WORLD);
+	//RecvBuf = (double*)malloc(DataSize*Cols * sizeof(double));
+	//MPI_Scatterv(matrixMPI, DataSizeArray, Displ, MPI_DOUBLE, RecvBuf, DataSize*Cols, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+	//GaussForwardMPI(RecvBuf, DataSize, Cols, rank, 1, size);
+	//MPI_Gatherv(RecvBuf, DataSize*Cols, MPI_DOUBLE, matrixMPI, DataSizeArray, Displ, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 	if (rank == 0)
 	{
-		//[[ Matrix initialization ]]
-		cout << "[[ Generating matrix ]]" << endl;
-		cout << "[ Rows: " << Rows << " Cols: " << Cols << " ]" << endl;
-		GenerateMatrix(matrix, Rows, Cols, 1, Rows * 10);
-		matrixMPI = new double[Cols*Rows];
-		CopyInto(matrix, matrixMPI, Rows, Cols);
-
-		//[[ MPI ]]
-		cout << "[[ MPI ]]" << endl;
-		PrintMatrix(matrix, Rows, Cols);
-		DataSize = DataDistr(Displ, DataSizeArray, Rows, Cols, DataSize, size);
-	}
-	else
-	{
-		MPI_Recv(&DataSize, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-	}
-
-	// [[ Shared code ]]
-	MPI_Barrier(MPI_COMM_WORLD);
-	RecvBuf = (double*)malloc(DataSize*Cols * sizeof(double));
-	MPI_Scatterv(matrixMPI, DataSizeArray, Displ, MPI_DOUBLE, RecvBuf, DataSize*Cols, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	GaussForwardMPI(RecvBuf, DataSize, Cols, rank, 1, size);
-	MPI_Gatherv(RecvBuf, DataSize*Cols, MPI_DOUBLE, matrixMPI, DataSizeArray, Displ, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-	if (rank == 0)
-	{
-		list< pair<double, double> > dots;
+		double *x, *y, *b, *a;
+		double **mainMatrix;
 		int dotNums, deg;
 		double lbound, ubound;
-		readInput(dots, dotNums, lbound, ubound, deg);
+		dotNums = dotNum();
+		a = new double[dotNums + 1];
+		x = new double[dotNums];
+		y = new double[dotNums];
+		b = new double[dotNums + 1];
+
+		//reading input file 
+		readInput(x, y, dotNums, lbound, ubound, deg);
 		cout << "deg = " << deg << endl;
 		cout << "lbound = " << lbound << " ubound = " << ubound << endl;
 		cout << "dotNums = " << dotNums << endl;
-		showlist(dots);
+
+		//initializing mainMantrix 
+		mainMatrix = new double*[dotNums + 1];
+		for (int i = 0; i < dotNums + 1; i++) mainMatrix[i] = new double[dotNums + 1];
+		//then we need to fill the matrix
+		fillMainMatrix(mainMatrix, dotNums, deg, x, y, b);
+		PrintMatrix(mainMatrix, b, dotNums, dotNums + 1);
+		delete[]x;
+		delete[]b;
+		delete[]y;
 	}
-		xMPI = new double[Cols - 1];
+	/*	xMPI = new double[Cols - 1];
 
 		GaussBackwardMPI(RecvBuf, xMPI, DataSize, Cols, rank, size);
 
@@ -319,6 +356,6 @@ void main(int argc, char** argv)
 		delete[] matrixMPI;
 	}
 	delete[] xMPI;
-	free(RecvBuf);
+	free(RecvBuf);*/
 	MPI_Finalize();
 }
